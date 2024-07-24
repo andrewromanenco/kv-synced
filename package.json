@@ -1,0 +1,15 @@
+{
+  "name": "kv-synced",
+  "version": "1.0.0",
+  "description": "KV store with synchronization over cloud drives.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --coverage"
+  },
+  "author": "Andrew Romanenco",
+  "license": "MIT",
+  "devDependencies": {
+    "ts-jest": "^29.2.3",
+    "typescript": "^5.5.4"
+  }
+}
