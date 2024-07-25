@@ -1,13 +1,16 @@
 import {CloudDrive} from './cloud-drive';
 import {KVList, Values} from './kv-record';
+import {VersionHandler} from './version';
 
 class KV {
     private cloudDrive:CloudDrive;
+    private versionHandler: VersionHandler;
     private cleanRecords: KVList;
     private dirtyRecords: KVList;
 
-    constructor(cloudDrive:CloudDrive) {
+    constructor(cloudDrive:CloudDrive, versionHandler: VersionHandler) {
             this.cloudDrive = cloudDrive;
+            this.versionHandler = versionHandler;
             this.cleanRecords = {};
             this.dirtyRecords = {};
     }
@@ -19,7 +22,15 @@ class KV {
             const storedKVList = JSON.parse(content) as KVList;
             Object.keys(storedKVList).forEach((key) => {
                 const value = storedKVList[key];
-                this.cleanRecords[key] = value;
+                if (key in this.cleanRecords) {
+                    this.cleanRecords[key] = this.versionHandler.handleConflict(
+                        key,
+                        this.cleanRecords[key],
+                        value
+                        );
+                } else {
+                    this.cleanRecords[key] = value;
+                }
             });
         });
     }
@@ -36,11 +47,19 @@ class KV {
 
     put(key: string, values: Values): void {
         if (key in this.cleanRecords) {
+            const existingRecord = this.cleanRecords[key];
             delete this.cleanRecords[key];
+            this.dirtyRecords[key] = {
+                values: values,
+                version: this.versionHandler.stampExistingRecord(
+                    values, existingRecord.version)
+            }
+        } else {
+            this.dirtyRecords[key] = {
+                values: values,
+                version: this.versionHandler.stampNewRecord(values)
+            }
         }
-        this.dirtyRecords[key] = {
-            values: values
-        };
     }
 
     commit(): void {
