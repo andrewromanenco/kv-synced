@@ -27,7 +27,6 @@ describe('KV-test', () => {
         lww = new LWWVersionHandler();
         const result = lww.stampNewRecord({"a":"b"})
         expect(result['timestamp']).toBeDefined();
-        console.log(result['timestamp']);
     });
 
     it('in case of a conflict, largest timestamp wins; pick first', () => {
