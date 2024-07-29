@@ -1,7 +1,7 @@
 import {describe, expect, jest, it, beforeEach} from '@jest/globals';
-import {KV} from './kv';
-import {CloudDrive} from './cloud-drive';
-import {VersionHandler} from './version';
+import {KV} from '../src/kv';
+import {CloudDrive} from '../src/cloud-drive';
+import {VersionHandler} from '../src/version';
 
 describe('KV-test', () => {
 

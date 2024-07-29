@@ -2,13 +2,23 @@
   "name": "kv-synced",
   "version": "1.0.0",
   "description": "KV store with synchronization over cloud drives.",
-  "main": "kv.js",
+  "main": "dist/kv.js",
+  "types": "dist/kv.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "test": "jest --coverage",
     "build": "tsc"
   },
   "author": "Andrew Romanenco",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andrewromanenco/kv-synced.git"
+  },
   "devDependencies": {
     "ts-jest": "^29.2.3",
     "tslib": "^2.6.3",

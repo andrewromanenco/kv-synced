@@ -1,5 +1,5 @@
 import {describe, expect, jest, it, beforeEach} from '@jest/globals';
-import { LWWVersionHandler, TimestampISOStrSupplier} from './lww-version';
+import { LWWVersionHandler, TimestampISOStrSupplier} from '../src/lww-version';
 
 describe('KV-test', () => {
 
