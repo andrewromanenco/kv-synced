@@ -24,4 +24,4 @@ interface KVList {
     [key: string]: KVRecord;
 }
 
-export {KVList, KVRecord, Values, Version};
+export type {KVList, KVRecord, Values, Version};

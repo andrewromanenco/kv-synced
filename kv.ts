@@ -15,12 +15,13 @@ class KV {
             this.dirtyRecords = {};
     }
 
-    load():void {
-        const list = this.cloudDrive.list();
-        list.forEach((file:any) => {
-            const content = this.cloudDrive.read(file);
+    async load():Promise<void> {
+        const list = await this.cloudDrive.list();
+        for (let i = 0; i < list.length; i++) {
+            const file = list[i];
+            const content = await this.cloudDrive.read(file);
             const storedKVList = JSON.parse(content) as KVList;
-            Object.keys(storedKVList).forEach((key) => {
+            for (const key in storedKVList) {
                 const value = storedKVList[key];
                 if (key in this.cleanRecords) {
                     this.cleanRecords[key] = this.versionHandler.handleConflict(
@@ -31,8 +32,8 @@ class KV {
                 } else {
                     this.cleanRecords[key] = value;
                 }
-            });
-        });
+            }
+        }
     }
 
     get(key: string):Values|undefined {
@@ -62,12 +63,12 @@ class KV {
         }
     }
 
-    commit(): void {
+    async commit(): Promise<void> {
         if (Object.keys(this.dirtyRecords).length == 0) {
             return;
         }
         const jsonString = JSON.stringify(this.dirtyRecords);
-        this.cloudDrive.write(jsonString);
+        await this.cloudDrive.write(jsonString);
         Object.keys(this.dirtyRecords).forEach((key) => {
             this.cleanRecords[key] = this.dirtyRecords[key];
         });
@@ -80,3 +81,6 @@ class KV {
 }
 
 export {KV};
+
+export { LWWVersionHandler } from './lww-version';
+export { type CloudDrive } from './cloud-drive';

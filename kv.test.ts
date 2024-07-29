@@ -13,16 +13,16 @@ describe('KV-test', () => {
        
     });
 
-    it('should load single record', () => {
+    it('should load single record', async () => {
         mockedCloudDrive = {
-            list: jest.fn().mockReturnValueOnce(['a']),
-            read: jest.fn().mockReturnValueOnce('{"key1":{"values":{"a":"b"},"version":{"v":"1"}}}'),
+            list: jest.fn().mockReturnValueOnce(Promise.resolve(['a'])),
+            read: jest.fn().mockReturnValueOnce(Promise.resolve('{"key1":{"values":{"a":"b"},"version":{"v":"1"}}}')),
             write: jest.fn()
         } as jest.Mocked<CloudDrive>;
 
         kv = new KV(mockedCloudDrive, mockedVersionHandler);
 
-        kv.load();
+        await kv.load();
         expect(kv.size()).toBe(1);
 
         const value = kv.get('key1');
@@ -32,15 +32,15 @@ describe('KV-test', () => {
         expect(kv.get('non-existing')).toBeUndefined();
     });
 
-    it('should call version handler when key is loaded twice', () => {
+    it('should call version handler when key is loaded twice', async () => {
         mockedCloudDrive = {
-            list: jest.fn().mockReturnValueOnce(['a', 'b']),
-            read: jest.fn().mockImplementation((name) => {
+            list: jest.fn().mockReturnValueOnce(Promise.resolve(['a', 'b'])),
+            read: jest.fn().mockImplementation(async (name) => {
                 if (name === 'a') {
-                    return '{"key1":{"values":{"a1":"b1"},"version":{"v":"1"}}}';
+                    return Promise.resolve('{"key1":{"values":{"a1":"b1"},"version":{"v":"1"}}}');
                 }
                 if (name === 'b') {
-                    return '{"key1":{"values":{"a2":"b2"},"version":{"v":"2"}}}';
+                    return Promise.resolve('{"key1":{"values":{"a2":"b2"},"version":{"v":"2"}}}');
                 }
                 throw new Error("Unknown param");
             }),
@@ -62,7 +62,7 @@ describe('KV-test', () => {
 
         kv = new KV(mockedCloudDrive, mockedVersionHandler);
 
-        kv.load();
+        await kv.load();
         expect(kv.size()).toBe(1);
 
         const value1 = kv.get('key1');
@@ -79,15 +79,15 @@ describe('KV-test', () => {
         expect(kvRecord2.values['a2']).toBe('b2');
     });
 
-    it('should load two records from two files', () => {
+    it('should load two records from two files', async () => {
         mockedCloudDrive = {
-            list: jest.fn().mockReturnValueOnce(['a', 'b']),
+            list: jest.fn().mockReturnValueOnce(Promise.resolve(['a', 'b'])),
             read: jest.fn().mockImplementation((name) => {
                 if (name === 'a') {
-                    return '{"key1":{"values":{"a1":"b1"}}}';
+                    return Promise.resolve('{"key1":{"values":{"a1":"b1"}}}');
                 }
                 if (name === 'b') {
-                    return '{"key2":{"values":{"a2":"b2"}}}';
+                    return Promise.resolve('{"key2":{"values":{"a2":"b2"}}}');
                 }
                 throw new Error("Unknown param");
             }),
@@ -96,7 +96,7 @@ describe('KV-test', () => {
 
         kv = new KV(mockedCloudDrive, mockedVersionHandler);
 
-        kv.load();
+        await kv.load();
         expect(kv.size()).toBe(2);
 
         const value1 = kv.get('key1');
@@ -108,9 +108,9 @@ describe('KV-test', () => {
         expect(value2!['a2']).toBe('b2');
     });
 
-    it('should save single new record in empty KV', () => {
+    it('should save single new record in empty KV', async () => {
         mockedCloudDrive = {
-            list: jest.fn().mockReturnValueOnce([]),
+            list: jest.fn().mockReturnValueOnce(Promise.resolve([])),
             read: jest.fn(),
             write: jest.fn()
         } as jest.Mocked<CloudDrive>;
@@ -123,10 +123,10 @@ describe('KV-test', () => {
 
         kv = new KV(mockedCloudDrive, mockedVersionHandler);
 
-        kv.load();
+        await kv.load();
 
         kv.put('newKey', {'a':'b'});
-        kv.commit();
+        await kv.commit();
         expect(mockedCloudDrive.write).toHaveBeenCalled();
         const callArg = mockedCloudDrive.write.mock.calls[0][0];
         const json = JSON.parse(callArg);
@@ -138,10 +138,10 @@ describe('KV-test', () => {
 
     });
 
-    it('should load single record and override it', () => {
+    it('should load single record and override it', async () => {
         mockedCloudDrive = {
-            list: jest.fn().mockReturnValueOnce(['a']),
-            read: jest.fn().mockReturnValueOnce('{"key1":{"values":{"a":"b"},"version":{"v":"1"}}}'),
+            list: jest.fn().mockReturnValueOnce(Promise.resolve(['a'])),
+            read: jest.fn().mockReturnValueOnce(Promise.resolve('{"key1":{"values":{"a":"b"},"version":{"v":"1"}}}')),
             write: jest.fn()
         } as jest.Mocked<CloudDrive>;
 
@@ -153,7 +153,7 @@ describe('KV-test', () => {
 
         kv = new KV(mockedCloudDrive, mockedVersionHandler);
 
-        kv.load();
+        await kv.load();
         expect(kv.size()).toBe(1);
 
         const originalValue = kv.get('key1');
@@ -169,7 +169,7 @@ describe('KV-test', () => {
         expect(notYetSaved!['x']).toBe('y');
         expect(notYetSaved!['a']).toBeUndefined();
 
-        kv.commit();
+        await kv.commit();
         const callArg = mockedCloudDrive.write.mock.calls[0][0];
         const json = JSON.parse(callArg);
         expect(json['key1']).toBeDefined();
@@ -189,7 +189,7 @@ describe('KV-test', () => {
         expect(saved!['x']).toBe('y');
         expect(saved!['a']).toBeUndefined();
 
-        kv.commit();
+        await kv.commit();
         expect(mockedCloudDrive.write).toHaveBeenCalledTimes(1);
     });
 });
