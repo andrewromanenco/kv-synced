@@ -17,7 +17,8 @@ describe('KV-test', () => {
         mockedCloudDrive = {
             list: jest.fn().mockReturnValueOnce(Promise.resolve(['a'])),
             read: jest.fn().mockReturnValueOnce(Promise.resolve('{"key1":{"values":{"a":"b"},"version":{"v":"1"}}}')),
-            write: jest.fn()
+            write: jest.fn(),
+            delete: jest.fn()
         } as jest.Mocked<CloudDrive>;
 
         kv = new KV(mockedCloudDrive, mockedVersionHandler);
@@ -44,7 +45,8 @@ describe('KV-test', () => {
                 }
                 throw new Error("Unknown param");
             }),
-            write: jest.fn()
+            write: jest.fn(),
+            delete: jest.fn()
         } as jest.Mocked<CloudDrive>;
 
         mockedVersionHandler = {
@@ -91,7 +93,8 @@ describe('KV-test', () => {
                 }
                 throw new Error("Unknown param");
             }),
-            write: jest.fn()
+            write: jest.fn(),
+            delete: jest.fn()
         } as jest.Mocked<CloudDrive>;
 
         kv = new KV(mockedCloudDrive, mockedVersionHandler);
@@ -112,7 +115,8 @@ describe('KV-test', () => {
         mockedCloudDrive = {
             list: jest.fn().mockReturnValueOnce(Promise.resolve([])),
             read: jest.fn(),
-            write: jest.fn()
+            write: jest.fn(),
+            delete: jest.fn()
         } as jest.Mocked<CloudDrive>;
 
         mockedVersionHandler = {
@@ -142,7 +146,8 @@ describe('KV-test', () => {
         mockedCloudDrive = {
             list: jest.fn().mockReturnValueOnce(Promise.resolve(['a'])),
             read: jest.fn().mockReturnValueOnce(Promise.resolve('{"key1":{"values":{"a":"b"},"version":{"v":"1"}}}')),
-            write: jest.fn()
+            write: jest.fn(),
+            delete: jest.fn()
         } as jest.Mocked<CloudDrive>;
 
         mockedVersionHandler = {
@@ -191,5 +196,54 @@ describe('KV-test', () => {
 
         await kv.commit();
         expect(mockedCloudDrive.write).toHaveBeenCalledTimes(1);
+    });
+
+    it('should compact database when there are ten base failes', async () => {
+        mockedCloudDrive = {
+            list: jest.fn().mockReturnValueOnce(Promise.resolve([
+                'f1', 'f2', 'f3', 'f4', 'f5','f6', 'f7', 'f8', 'f9', 'f10'])),
+            read: jest.fn().mockReturnValue('{"key1":{"values":{"x":"y"}}}'),
+            write: jest.fn(),
+            delete: jest.fn()
+        } as jest.Mocked<CloudDrive>;
+
+        mockedVersionHandler = {
+            stampNewRecord: jest.fn(),
+            stampExistingRecord: jest.fn(),
+            handleConflict: jest.fn().mockReturnValue({
+                values: {
+                    "x":"z"
+                },
+                version: {
+                    "v":"10"
+                }
+            })
+        } as jest.Mocked<VersionHandler>;
+
+        kv = new KV(mockedCloudDrive, mockedVersionHandler);
+
+        await kv.load();
+        expect(kv.size()).toBe(1);
+
+        const value = kv.get('key1');
+        expect(value).toBeDefined();
+        expect(value!['x']).toBe('z');
+
+        expect(mockedCloudDrive.write).toHaveBeenCalledTimes(1);
+        const callArg = mockedCloudDrive.write.mock.calls[0][0];
+        const json = JSON.parse(callArg);
+        expect(json['key1']).toBeDefined();
+        expect(json['key1']['values']).toBeDefined();
+        expect(json['key1']['values']['x']).toBe('z');
+        expect(json['key1']['version']).toBeDefined();
+        expect(json['key1']['version']['v']).toBe('10');
+
+        expect(mockedCloudDrive.delete).toHaveBeenCalledTimes(10);
+
+        const filesToDelete = ['f1', 'f2', 'f3', 'f4', 'f5','f6', 'f7', 'f8', 'f9', 'f10'];
+        for (let i = 0; i < 10; i++) {
+            const fileArg = mockedCloudDrive.delete.mock.calls[i][0];
+            expect(fileArg).toBe(filesToDelete[i]);
+        }
     });
 });

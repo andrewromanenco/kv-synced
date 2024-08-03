@@ -3,6 +3,8 @@ import {KVList, Values} from './kv-record';
 import {VersionHandler} from './version';
 
 class KV {
+    private static readonly COMPACT_LIMIT: number = 10;
+
     private cloudDrive:CloudDrive;
     private versionHandler: VersionHandler;
     private cleanRecords: KVList;
@@ -32,6 +34,18 @@ class KV {
                 } else {
                     this.cleanRecords[key] = value;
                 }
+            }
+        }
+        await this.compactDB(list);
+    }
+
+    private async compactDB(listOfFile:any[]): Promise<void> {
+        if (listOfFile.length >= KV.COMPACT_LIMIT) {
+            const jsonString = JSON.stringify(this.cleanRecords);
+            await this.cloudDrive.write(jsonString);
+            for (let i = 0; i < listOfFile.length; i++) {
+                const file = listOfFile[i];
+                await this.cloudDrive.delete(file);
             }
         }
     }

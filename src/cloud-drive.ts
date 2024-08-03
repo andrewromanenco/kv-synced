@@ -6,4 +6,5 @@ export interface CloudDrive {
     list():Promise<any[]>;
     read(fileHandle:any): Promise<string>;
     write(content: string):Promise<void>;
+    delete(fileHandle:any): Promise<void>;
 }
