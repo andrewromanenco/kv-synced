@@ -1,7 +1,7 @@
 {
   "name": "kv-synced",
-  "version": "1.0.0",
-  "description": "KV store with synchronization over cloud drives.",
+  "version": "2.0.0",
+  "description": "Distributed KV storage based on write-once log files",
   "main": "dist/kv.js",
   "types": "dist/kv.d.ts",
   "files": [
